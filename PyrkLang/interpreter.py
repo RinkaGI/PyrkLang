@@ -1,30 +1,35 @@
-import sys, tokenizer
+import sys
+from lexer import lexer
+from pyrkparser import *
 
 # TODO: Create a good interface for the coder
 
-# print("[X] Reading file...")
 filepath = sys.argv[1]
 
 f = open(filepath, "r")
 code = f.read()
 f.close()
 
-# print("[X] Tokenizing file...")
-programInstructions = tokenizer.tokenize(code)
-position = -1
+class Interpreter:
+    def __init__(self):
+        pass
 
-# print("[X] Executing...")
-for instruction in programInstructions:
-    if type(instruction) == list:
-        for instr in instruction:
-            position += 1
+    def visit(self, node):
+        if isinstance(node, PrintNode):
+            value = self.visit(node.value)
+            print(value)
+        elif isinstance(node, NumberNode):
+            return int(node.value)
+        elif isinstance(node, StringNode):
+            return node.value[1:-1]
+        else:
+            raise Exception(f"Unknown node: {node}")
+        
+    def interpret(self, ast):
+        for node in ast:
+            self.visit(node)
 
-            def getInstruction(pos):
-                if type(instruction) == list:
-                    return instruction[pos]
-                else:
-                    pass
-            
-            if instr == "print":
-                print(getInstruction(position + 1))
-                pass
+tokens = lexer.lex(code)
+ast = parser.parse(tokens)
+interp = Interpreter()
+interp.interpret(ast)

@@ -1,84 +1,63 @@
-import sys
-import tokenizer
-import os
+from pyrkparser import *
+from lexer import lexer
+import sys, os
 
-# TODO: Create a good interface for the coder
-
-# print("[X] Reading file...")
 filepath = sys.argv[1]
 
 with open(filepath, "r") as f:
     code = f.read()
 
-asmFilepath = filepath[:-5] + '.asm'
-out = open(asmFilepath, "w")
+cFilepath = filepath[:-5] + '.c'
+out = open(cFilepath, "w")
 
-# print("[X] Tokenizing file...")
-programInstructions = tokenizer.tokenize(code)
-position = -1
-printArgs = []
-printCounter = -1
+tokens = lexer.lex(code)
+ast = parser.parse(tokens)
 
-# Getting print args
-for instruction in programInstructions:
-    if isinstance(instruction, list):
-        for pos, instr in enumerate(instruction):
-            if instr == "print" and pos + 1 < len(instruction):
-                printArgs.append(instruction[pos + 1])
+class Compiler:
+    def __init__(self, ast) -> None:
+        self.printArgs = []
+        
+        out.write("""
+// -- header --
+#include <stdio.h>
+        """)
 
-out.write("""; -- header --
-bits 64
-default rel
+        out.write("""
+// -- variables --
+
 """)
 
-out.write("""; -- variables --
-section .bss
+
+        out.write("""
+// -- constants --
+
+        """)
+
+        out.write("""
+// -- Entry point --
+int main() {
+
 """)
 
-out.write("""; -- constants --
-section .data
-""")
-for i, printarg in enumerate(printArgs):
-    out.write(f"print_arg_{i} db \"{printarg}\", 10, 0\n")
+    def visit(self, node):
+        if isinstance(node, PrintNode):
+            out.write(f'// -- PRINT --\n')
+            value = self.visit(node.value)
+            out.write(f'printf("{str(value)}");')
+        if isinstance(node, NumberNode):
+            return int(node.value)
+        if isinstance(node, StringNode):
+            return node.value[1:-1]
+    
+    def compile(self):
+        for node in ast:
+            self.visit(node)
 
-out.write("""; -- Entry point --
-section .text
-global main
-extern ExitProcess
-extern printf
-          
-main:
-\tPUSH rbp
-\tMOV rbp, rsp
-\tSUB rsp, 32
-""")
-
-# print("[X] Executing...")
-
-for instruction in programInstructions:
-    if isinstance(instruction, list):
-        for instr in instruction:
-            if instr == "print":
-                printCounter += 1
-                out.write(f"; -- PRINT --\n")
-                out.write(f"\tLEA rcx, [print_arg_{printCounter}]\n")
-                out.write(f"\tXOR eax, eax\n")
-                out.write(f"\tCALL printf\n")
-
-out.write("""
-\tXOR rax, rax
-\tCALL ExitProcess
-
-\tMOV rsp, rbp
-\tPOP rbp
-\tRET
-""")
+comp = Compiler(ast)
+comp.compile()
+out.write('return 0;\n}')
 out.close()
 
-# Assembling and linking the generated ASM code
-os.system(f"nasm -f elf64 {asmFilepath}")
-os.system(f"gcc -o {asmFilepath[:-4] + '.exe'} {asmFilepath[:-4] + '.o'}")
-os.system(f"{asmFilepath[:-4] + '.exe'}")
-
-os.remove(f"{asmFilepath[:-4] + '.o'}")
-os.remove(f"{asmFilepath[:-4] + '.asm'}")
+os.system(f"gcc {cFilepath[:-2] + '.c'} -o {cFilepath[:-2] + '.exe'}")
+os.system(f"{cFilepath[:-2] + '.exe'}")
+os.remove(f"{cFilepath[:-2] + '.c'}")

@@ -1,6 +1,9 @@
 DIGITS = '0123456789.'
 def onlyDigits(s):
     return all(char in DIGITS for char in s)
+NUMBERS = '0123456789'
+def onlyNumbers(s):
+    return all(char in NUMBERS for char in s)
 
 class Token:
     def __init__(self, type_, value=None) -> None:

@@ -1,6 +1,7 @@
-import sys
+import sys, os
 from lexer import lexer
 from pyrkparser import *
+from utils import *
 
 # TODO: Create a good interface for the coder
 
@@ -17,9 +18,16 @@ class Interpreter:
     def visit(self, node):
         if isinstance(node, PrintNode):
             value = self.visit(node.value)
-            print(value)
+            value = str(value)
+            value = value.replace(r'\n', '\n')
+            sys.stdout.write(str(value))
         elif isinstance(node, NumberNode):
-            return int(node.value)
+            if onlyNumbers(node.value):
+                return int(node.value)
+            elif onlyDigits(node.value):
+                return float(node.value)
+            else:
+                raise Exception('Unexpected error understanding this: ', str(node.value))
         elif isinstance(node, StringNode):
             return node.value[1:-1]
         else:

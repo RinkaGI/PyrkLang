@@ -1,4 +1,5 @@
 from pyrkparser import *
+from utils import *
 from lexer import lexer
 import sys, os
 
@@ -45,7 +46,12 @@ int main() {
             value = self.visit(node.value)
             out.write(f'printf("{str(value)}");')
         if isinstance(node, NumberNode):
-            return int(node.value)
+            if onlyNumbers(node.value):
+                return int(node.value)
+            elif onlyDigits(node.value):
+                return float(node.value)
+            else:
+                raise Exception('Unexpected error understanding this: ', str(node.value))
         if isinstance(node, StringNode):
             return node.value[1:-1]
     

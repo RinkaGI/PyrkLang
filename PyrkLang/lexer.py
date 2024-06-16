@@ -5,7 +5,7 @@ import sys
 lg = LexerGenerator()
 
 lg.add(TOK_PRINT, r'print')
-lg.add(TOK_NUMBER, r'\d+')
+lg.add(TOK_NUMBER, r'\d+(\.\d+)?')
 lg.add(TOK_STRING, r'"(?:\\.|[^"\\])*"')
 lg.ignore(r'\s+')
 
